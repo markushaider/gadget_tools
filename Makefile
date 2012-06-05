@@ -11,8 +11,14 @@ convert2ifirt: convert2ifrit.c snapshot_io.c data_ops.c snapshot_io.h data_ops.h
 getBBox: getBBox.c snapshot_io.c data_ops.c snapshot_io.h data_ops.h
 	$(CC) $(CFLAGS) -o getBBox getBBox.c snapshot_io.c data_ops.c -lm -O3
 
+cutout: cutout.c snapshot_io.c data_ops.c snapshot_io.h data_ops.h
+	$(CC) $(CFLAGS) -o cutout cutout.c snapshot_io.c data_ops.c -lm -O3
+
 santaBarbara: santaBarbara.c snapshot_io.c data_ops.c snapshot_io.h data_ops.h
 	$(CC) $(CFLAGS) -o santaBarbara santaBarbara.c snapshot_io.c data_ops.c -lm -O3
+
+santaBarbara50: santaBarbara50.c snapshot_io.c data_ops.c snapshot_io.h data_ops.h
+	$(CC) $(CFLAGS) -o santaBarbara50 santaBarbara50.c snapshot_io.c data_ops.c -lm -O3
 
 all: reduce convert2ifirt getBBox santaBarbara
 
