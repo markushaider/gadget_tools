@@ -11,7 +11,10 @@ convert2ifirt: convert2ifrit.c snapshot_io.c data_ops.c snapshot_io.h data_ops.h
 getBBox: getBBox.c snapshot_io.c data_ops.c snapshot_io.h data_ops.h
 	$(CC) $(CFLAGS) -o getBBox getBBox.c snapshot_io.c data_ops.c -lm -O3
 
-all: reduce convert2ifirt getBBox
+santaBarbara: santaBarbara.c snapshot_io.c data_ops.c snapshot_io.h data_ops.h
+	$(CC) $(CFLAGS) -o santaBarbara santaBarbara.c snapshot_io.c data_ops.c -lm -O3
+
+all: reduce convert2ifirt getBBox santaBarbara
 
 clean:
 	rm -rf reduce convert2ifrit getBBox
