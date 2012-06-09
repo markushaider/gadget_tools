@@ -43,7 +43,12 @@ int main(int argc, char** argv) {
     if(P[i].Pos[0]<center+extent/2 && P[i].Pos[0]>center-extent/2 &&
        P[i].Pos[1]<center+extent/2 && P[i].Pos[1]>center-extent/2 &&
        P[i].Pos[2]<center+extent/2 && P[i].Pos[2]>center-extent/2) {
+      /* shift coordinates */
+      P[i].Pos[0]-= center-extent/2;
+      P[i].Pos[1]-= center-extent/2;
+      P[i].Pos[2]-= center-extent/2;
       P[counter] = P[i];
+      
       counter++;
     }
   }
