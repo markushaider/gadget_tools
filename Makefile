@@ -17,10 +17,13 @@ cutout: cutout.c snapshot_io.c data_ops.c snapshot_io.h data_ops.h
 santaBarbara: santaBarbara.c snapshot_io.c data_ops.c snapshot_io.h data_ops.h
 	$(CC) $(CFLAGS) -o santaBarbara santaBarbara.c snapshot_io.c data_ops.c -lm -O3
 
+info: info.c snapshot_io.c data_ops.c snapshot_io.h data_ops.h
+	$(CC) $(CFLAGS) -o info info.c snapshot_io.c data_ops.c -lm -O3
+
 santaBarbara50: santaBarbara50.c snapshot_io.c data_ops.c snapshot_io.h data_ops.h
 	$(CC) $(CFLAGS) -o santaBarbara50 santaBarbara50.c snapshot_io.c data_ops.c -lm -O3
 
-all: reduce convert2ifirt getBBox santaBarbara
+all: reduce convert2ifirt getBBox santaBarbara info cutout
 
 clean:
-	rm -rf reduce convert2ifrit getBBox
+	rm -rf reduce convert2ifrit getBBox info santaBarbara cutout
