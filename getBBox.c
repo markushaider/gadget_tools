@@ -13,10 +13,10 @@ int main(int argc, char** argv) {
   snap_init=argv[1];
   char *snap_final;
   snap_final=argv[2];
-  float bboxX = atof(argv[3]);
-  float bboxY = atof(argv[4]);
-  float bboxZ = atof(argv[5]);
-  float size = atof(argv[6]);
+  float cX = atof(argv[3]);
+  float cY = atof(argv[4]);
+  float cZ = atof(argv[5]);
+  float lRefined = atof(argv[6]);
 
   if(argc!=7) {
     printf("Usage: ./getBBox <snapshot0> <snapshot_final> <x> <y> <z> <extent>\n");
@@ -25,10 +25,10 @@ int main(int argc, char** argv) {
     return 0;
   }
   printf(" You specified\n");
-  printf(" <x>: %g\n",bboxX);
-  printf(" <y>: %g\n",bboxY);
-  printf(" <z>: %g\n",bboxZ);
-  printf(" extent: %g\n",size);
+  printf(" <x>: %g\n",cX);
+  printf(" <y>: %g\n",cY);
+  printf(" <z>: %g\n",cZ);
+  printf(" extent: %g\n",lRefined);
   printf("\n loading snapshot files...\n");
   /* load snapshots */
   io_header header_ic;
@@ -49,37 +49,73 @@ int main(int argc, char** argv) {
   /* find the bounding box at the beginning */
   int i,j;
   int counter=0;
-  float iBoxX1, iBoxX2, iBoxY1, iBoxY2, iBoxZ1, iBoxZ2;
-  for(i=0; i< header.npart[0]+header.npart[1]; i++) {
+  float xMin, xMax, yMin, yMax, zMin, zMax;
+  float halfLength = lRefined/2.;
+  float halfBoxSize = header.BoxSize/2;
 
+
+  /* shift the coordinates around center */
+  printf("Shift coordinates around center\n");
+  for(i=0; i< header.npart[0]+header.npart[1]; i++) {
+    if(P[i].Pos[0]-cX < -halfBoxSize) {
+      P[i].Pos[0] = header.BoxSize+P[i].Pos[0]-cX;
+    }
+    else if(P[i].Pos[0]-cX > halfBoxSize) {
+      P[i].Pos[0] = -header.BoxSize+P[i].Pos[0]-cX;
+    }
+    else {
+      P[i].Pos[0] -= cX;
+    }
+    if(P[i].Pos[1]-cY < -halfBoxSize) {
+      P[i].Pos[1] = header.BoxSize+P[i].Pos[1]-cY;
+    }
+    else if(P[i].Pos[1]-cY > halfBoxSize) {
+      P[i].Pos[1] = -header.BoxSize+P[i].Pos[1]-cY;
+    }
+    else {
+      P[i].Pos[1] -= cY;
+    }
+    if(P[i].Pos[2]-cZ < -halfBoxSize) {
+      P[i].Pos[2] = header.BoxSize+P[i].Pos[2]-cZ;
+    }
+    else if(P[i].Pos[2]-cZ > halfBoxSize) {
+      P[i].Pos[2] = -header.BoxSize+P[i].Pos[2]-cZ;
+    }
+    else {
+      P[i].Pos[2] -= cZ;
+    }
+  }
+  printf("Done shifting coordinates\n");
+
+  /* set first values */
+  xMin = P[0].Pos[0];
+  xMax = P[0].Pos[0];
+  yMin = P[0].Pos[1];
+  yMax = P[0].Pos[1];
+  zMin = P[0].Pos[2];
+  zMax = P[0].Pos[2];
+
+  for(i=1; i< header.npart[0]+header.npart[1]; i++) {
     /* check whether particle is within the definded bounding box */
-    if (P[i].Pos[0] > bboxX-size/2 && P[i].Pos[0] < bboxX+size/2 &&
-	P[i].Pos[1] > bboxY-size/2 && P[i].Pos[1] < bboxY+size/2 &&
-	P[i].Pos[2] > bboxZ-size/2 && P[i].Pos[2] < bboxZ+size/2) {
+    if (P[i].Pos[0] < halfLength && P[i].Pos[0] > -halfLength &&
+	P[i].Pos[1] < halfLength && P[i].Pos[1] > -halfLength &&
+	P[i].Pos[2] < halfLength && P[i].Pos[2] > -halfLength) {
       /* if particle is inside, then get the position of the particle in the ic */
       for(j=0; j< header.npart[0]+header.npart[1]; j++) {
+
 	if(P_ic[j].Id == P[i].Id) {
-	  if (counter==0) {
-	    iBoxX1 = P_ic[j].Pos[0];
-	    iBoxX2 = P_ic[j].Pos[0];
-	    iBoxY1 = P_ic[j].Pos[1];
-	    iBoxY2 = P_ic[j].Pos[1];
-	    iBoxZ1 = P_ic[j].Pos[2];
-	    iBoxZ2 = P_ic[j].Pos[2];
-	  } else {
-	    if (P_ic[j].Pos[0] < iBoxX1)
-	      iBoxX1 = P_ic[j].Pos[0];
-	    if (P_ic[j].Pos[0] > iBoxX2)
-	      iBoxX2 = P_ic[j].Pos[0];
-	    if (P_ic[j].Pos[1] < iBoxY1)
-	      iBoxY1 = P_ic[j].Pos[1];
-	    if (P_ic[j].Pos[1] > iBoxY2)
-	      iBoxY2 = P_ic[j].Pos[1];
-	    if (P_ic[j].Pos[2] < iBoxZ1)
-	      iBoxZ1 = P_ic[j].Pos[2];
-	    if (P_ic[j].Pos[2] > iBoxZ2)
-	      iBoxZ2 = P_ic[j].Pos[2];
-	  }
+	    if (P[i].Pos[0] < xMin)
+	      xMin = P[i].Pos[0];
+	    if (P[i].Pos[0] > xMax)
+	      xMax = P[i].Pos[0];
+	    if (P[i].Pos[1] < yMin)
+	      yMin = P[i].Pos[1];
+	    if (P[i].Pos[1] > yMax)
+	      yMax = P[i].Pos[1];
+	    if (P[i].Pos[2] < zMin)
+	      zMin = P[i].Pos[2];
+	    if (P[i].Pos[2] > zMax)
+	      zMax = P[i].Pos[2];
 	  break;
 	}
       }
@@ -87,16 +123,13 @@ int main(int argc, char** argv) {
     }
   }
 
-  printf(" Values for the bounding box in the initial conditions:\n");
-  printf(" x1: %g x2: %g\n", iBoxX1, iBoxX2);
-  printf(" y1: %g y2: %g\n", iBoxY1, iBoxY2);
-  printf(" z1: %g z2: %g\n", iBoxZ1, iBoxZ2);
-  printf(" x center: %g\n", iBoxX1+(iBoxX2-iBoxX1)/2);
-  printf(" y center: %g\n", iBoxY1+(iBoxY2-iBoxY1)/2);
-  printf(" z center: %g\n", iBoxZ1+(iBoxZ2-iBoxZ1)/2);
-  printf(" x range: %g\n", iBoxX2-iBoxX1);
-  printf(" y range: %g\n", iBoxY2-iBoxY1);
-  printf(" z range: %g\n", iBoxZ2-iBoxZ1);
+  printf(" Values for the distance to center:\n");
+  printf(" x1: %g x2: %g\n", xMin, xMax);
+  printf(" y1: %g y2: %g\n", yMin, yMax);
+  printf(" z1: %g z2: %g\n", zMin, zMax);
+  printf(" x range: %g\n", xMax-xMin);
+  printf(" y range: %g\n", yMax-yMin);
+  printf(" z range: %g\n", zMax-zMin);
   printf(" total number of particles in bbox: %i\n",counter);
 
   return 0;
