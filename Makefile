@@ -1,6 +1,6 @@
 
 CC = gcc
-CFLAGS = -O3
+CFLAGS = -O3 -Wno-unused-result
 
 reduce: reduce.c snapshot_io.c data_ops.c snapshot_io.h data_ops.h
 	$(CC) $(CFLAGS) -o reduce reduce.c snapshot_io.c data_ops.c -lm -O3

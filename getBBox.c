@@ -167,22 +167,36 @@ int main(int argc, char** argv) {
       }
       if(j==header_ic.npart[0]+header_ic.npart[1]) {
 	notfound++;
-	printf("Problem, id not found: %i %i\n",P[i].Id,notfound);
       }
       counter++;
     }
   }
-  PRINTF("%i particles not found in initial conditions\n",notfound);
-
-  printf("test counter values: %i %i\n",counter,found);
-  printf(" Values for the distance to center:\n");
-  printf(" x1: %g x2: %g\n", xMin, xMax);
-  printf(" y1: %g y2: %g\n", yMin, yMax);
-  printf(" z1: %g z2: %g\n", zMin, zMax);
-  printf(" x range: %g\n", xMax-xMin);
-  printf(" y range: %g\n", yMax-yMin);
-  printf(" z range: %g\n", zMax-zMin);
+  if(notfound!=0) {
+    printf(" Problem! There were particles which have not been found in the ICs\n");
+  }
   printf(" total number of particles in bbox: %i\n",counter);
+  printf(" Bounding Box coordinates in shifted coordinates:\n");
+  printf(" xMin: %g xMax: %g\n", xMin, xMax);
+  printf(" yMin: %g yMax: %g\n", yMin, yMax);
+  printf(" zMin: %g zMax: %g\n", zMin, zMax);
+  printf(" x-range: %g\n", xMax-xMin);
+  printf(" y-range: %g\n", yMax-yMin);
+  printf(" z-range: %g\n", zMax-zMin);
+  printf(" Bounding Box coordinates in real coordinates:\n");
+  printf(" xMin: %g xMax: %g\n", xMin+cX, xMax+cX);
+  printf(" yMin: %g yMax: %g\n", yMin+cY, yMax+cY);
+  printf(" zMin: %g zMax: %g\n", zMin+cZ, zMax+cZ);
+  printf(" center of the region in the ics:\n");
+  printf(" x-center: %g\n", xMin+cX + (xMax-xMin)/2);
+  printf(" y-center: %g\n", yMin+cY + (yMax-yMin)/2);
+  printf(" z-center: %g\n", zMin+cZ + (zMax-zMin)/2);
+  printf(" specified center:\n");
+  printf(" x-center at z=0: %g\n", cX);
+  printf(" y-center at z=0: %g\n", cY);
+  printf(" z-center at z=0: %g\n", cZ);
+
+
+
 
   return 0;
 }
