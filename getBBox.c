@@ -194,8 +194,28 @@ int main(int argc, char** argv) {
   printf(" x-center at z=0: %g\n", cX);
   printf(" y-center at z=0: %g\n", cY);
   printf(" z-center at z=0: %g\n", cZ);
-
-
+  printf(" corrected bounding box:\n");
+  xMin = xMin+cX;
+  xMax = xMax+cX;
+  yMin = yMin+cY;
+  yMax = yMax+cY;
+  zMin = zMin+cZ;
+  zMax = zMax+cZ;
+  if(xMax<cX+halfLength)
+    xMax=cX+halfLength;
+  if(xMin>cX-halfLength)
+    xMin=cX-halfLength;
+  if(yMax<cY+halfLength)
+    yMax=cY+halfLength;
+  if(yMin>cY-halfLength)
+    yMin=cY-halfLength;
+  if(zMax<cZ+halfLength)
+    zMax=cZ+halfLength;
+  if(zMin>cZ-halfLength)
+    zMin=cZ-halfLength;
+  printf(" xMin: %g xMax: %g\n", xMin, xMax);
+  printf(" yMin: %g yMax: %g\n", yMin, yMax);
+  printf(" zMin: %g zMax: %g\n", zMin, zMax);
 
 
   return 0;
