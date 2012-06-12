@@ -46,9 +46,16 @@ int main(int argc, char** argv) {
   printf("Number of low-res dm particles: %i\n", header.npart[5]);
   printf("Number of star particles: %i\n", header.npart[4]);
 
+  printf("\n Information about the initial conditions: \n");
+  printf("Boxsize: %g\n", header_ic.BoxSize);
+  printf("Number of gas particles: %i\n", header_ic.npart[0]);
+  printf("Number of high-res dm particles: %i\n", header_ic.npart[1]);
+  printf("Number of low-res dm particles: %i\n", header_ic.npart[5]);
+  printf("Number of star particles: %i\n", header_ic.npart[4]);
+
   /* find the bounding box at the beginning */
   int i,j;
-  int counter=0;
+
   float xMin, xMax, yMin, yMax, zMin, zMax;
   float halfLength = lRefined/2.;
   float halfBoxSize = header.BoxSize/2;
@@ -87,42 +94,87 @@ int main(int argc, char** argv) {
   }
   printf("Done shifting coordinates\n");
 
-  /* set first values */
-  xMin = P[0].Pos[0];
-  xMax = P[0].Pos[0];
-  yMin = P[0].Pos[1];
-  yMax = P[0].Pos[1];
-  zMin = P[0].Pos[2];
-  zMax = P[0].Pos[2];
+  printf("Shift coordinates of IC around center\n");
+  for(i=0; i< header_ic.npart[0]+header_ic.npart[1]; i++) {
+    if(P_ic[i].Pos[0]-cX < -halfBoxSize) {
+      P_ic[i].Pos[0] = header_ic.BoxSize+P_ic[i].Pos[0]-cX;
+    }
+    else if(P_ic[i].Pos[0]-cX > halfBoxSize) {
+      P_ic[i].Pos[0] = -header_ic.BoxSize+P_ic[i].Pos[0]-cX;
+    }
+    else {
+      P_ic[i].Pos[0] -= cX;
+    }
+    if(P_ic[i].Pos[1]-cY < -halfBoxSize) {
+      P_ic[i].Pos[1] = header_ic.BoxSize+P_ic[i].Pos[1]-cY;
+    }
+    else if(P_ic[i].Pos[1]-cY > halfBoxSize) {
+      P_ic[i].Pos[1] = -header_ic.BoxSize+P_ic[i].Pos[1]-cY;
+    }
+    else {
+      P_ic[i].Pos[1] -= cY;
+    }
+    if(P_ic[i].Pos[2]-cZ < -halfBoxSize) {
+      P_ic[i].Pos[2] = header_ic.BoxSize+P_ic[i].Pos[2]-cZ;
+    }
+    else if(P_ic[i].Pos[2]-cZ > halfBoxSize) {
+      P_ic[i].Pos[2] = -header_ic.BoxSize+P_ic[i].Pos[2]-cZ;
+    }
+    else {
+      P_ic[i].Pos[2] -= cZ;
+    }
+  }
+  printf("Done shifting coordinates of IC\n");
 
-  for(i=1; i< header.npart[0]+header.npart[1]; i++) {
+  int counter=0;
+  int found=0;
+  int notfound=0;
+  for(i=0; i< header.npart[0]+header.npart[1]; i++) {
     /* check whether particle is within the definded bounding box */
     if (P[i].Pos[0] < halfLength && P[i].Pos[0] > -halfLength &&
 	P[i].Pos[1] < halfLength && P[i].Pos[1] > -halfLength &&
 	P[i].Pos[2] < halfLength && P[i].Pos[2] > -halfLength) {
       /* if particle is inside, then get the position of the particle in the ic */
-      for(j=0; j< header.npart[0]+header.npart[1]; j++) {
+      for(j=0; j< header_ic.npart[0]+header_ic.npart[1]; j++) {
 
 	if(P_ic[j].Id == P[i].Id) {
-	    if (P[i].Pos[0] < xMin)
-	      xMin = P[i].Pos[0];
-	    if (P[i].Pos[0] > xMax)
-	      xMax = P[i].Pos[0];
-	    if (P[i].Pos[1] < yMin)
-	      yMin = P[i].Pos[1];
-	    if (P[i].Pos[1] > yMax)
-	      yMax = P[i].Pos[1];
-	    if (P[i].Pos[2] < zMin)
-	      zMin = P[i].Pos[2];
-	    if (P[i].Pos[2] > zMax)
-	      zMax = P[i].Pos[2];
+	  if(counter==0) {
+	    xMin = P_ic[j].Pos[0];
+	    xMax = P_ic[j].Pos[0];
+	    yMin = P_ic[j].Pos[1];
+	    yMax = P_ic[j].Pos[1];
+	    zMin = P_ic[j].Pos[2];
+	    zMax = P_ic[j].Pos[2];
+
+	    found++;
+	    break;
+	  }
+	  found++;
+	  if (P_ic[j].Pos[0] < xMin)
+	    xMin = P_ic[j].Pos[0];
+	  if (P_ic[j].Pos[0] > xMax)
+	    xMax = P_ic[j].Pos[0];
+	  if (P_ic[j].Pos[1] < yMin)
+	    yMin = P_ic[j].Pos[1];
+	  if (P_ic[j].Pos[1] > yMax)
+	    yMax = P_ic[j].Pos[1];
+	  if (P_ic[j].Pos[2] < zMin)
+	    zMin = P_ic[j].Pos[2];
+	  if (P_ic[j].Pos[2] > zMax)
+	    zMax = P_ic[j].Pos[2];
 	  break;
 	}
+      }
+      if(j==header_ic.npart[0]+header_ic.npart[1]) {
+	notfound++;
+	printf("Problem, id not found: %i %i\n",P[i].Id,notfound);
       }
       counter++;
     }
   }
+  PRINTF("%i particles not found in initial conditions\n",notfound);
 
+  printf("test counter values: %i %i\n",counter,found);
   printf(" Values for the distance to center:\n");
   printf(" x1: %g x2: %g\n", xMin, xMax);
   printf(" y1: %g y2: %g\n", yMin, yMax);
