@@ -63,6 +63,11 @@ void check_omega(particle_data *P, io_header *header)
   printf("OmegaDm: %g\n",omegaDm);
   printf("OmegaBaryon: %g\n",omegaBaryon);
   printf("OmegaStar: %g\n",omegaStar);
+  FILE *file;
+  file = fopen("omega.out","a");
+  fprintf(file,"%g %g %g %g %g %g \n",header->redshift, omegaTot, omegaDm, omegaGas, omegaStar, omegaBaryon);
+  fclose(file);
+
 
 }
 
