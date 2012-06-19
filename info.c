@@ -7,6 +7,65 @@
 #include "data_ops.h"
 #include "snapshot_io.h"
 
+void check_omega(particle_data *P, io_header *header)
+{
+
+  int NumPart;
+  NumPart = header->npartTotal[0]+header->npartTotal[1]+header->npartTotal[4]+header->npartTotal[5];
+
+  float BoxSize = header->BoxSize;
+
+  /* calculate the critical density in SI units */
+  double Mpc_si = 3.08568025E22;
+  double H_si = 70.*1E3/Mpc_si;	/* insert the Hubble constant here */
+  double G_si = 6.67384E-11;
+  double rhoc_si = 3*H_si*H_si/(8.*3.14*G_si);
+  printf("Critical density in SI units: %g\n", rhoc_si);
+
+  /* get the mass of the particle types */
+  double massTot=0;
+  double massDm=0;
+  double massDmBoundary=0;
+  double massGas=0;
+  double massStar=0;
+
+  int i;
+  for(i = 0; i < NumPart; i++)
+    massTot += (double)P[i].Mass;
+
+  for(i = header->npartTotal[0]; i < header->npartTotal[0]+header->npartTotal[1]; i++)
+    massDm += (double)P[i].Mass;
+
+  for(i = 0; i < header->npartTotal[0]; i++)
+    massGas += (double)P[i].Mass;
+
+  for(i = header->npartTotal[1]+header->npartTotal[0]; i < header->npartTotal[0]+header->npartTotal[1]+header->npartTotal[4]; i++)
+    massStar += (double)P[i].Mass;
+
+  for(i = header->npartTotal[1]+header->npartTotal[0]+header->npartTotal[4]; i < header->npartTotal[0]+header->npartTotal[1]+header->npartTotal[4]+header->npartTotal[5]; i++)
+    massDmBoundary += (double)P[i].Mass;
+
+  if(massDmBoundary!=0)
+    printf("Attention, Boundary particles present\n");
+
+  /* convert mass to omega */
+  double volume = pow((BoxSize/0.7*Mpc_si/1000.),3); /* attention, Gadget uses units/h */
+  double m_unit = 1.98892E30*1E10/0.7;		     /* attention, Gadget uses units/h */
+  double omegaTot, omegaDm, omegaBaryon, omegaGas, omegaStar;
+  omegaTot = massTot*m_unit/volume/rhoc_si;
+  omegaDm = (massDm+massDmBoundary)*m_unit/volume/rhoc_si;
+  omegaBaryon = (massGas+massStar)*m_unit/volume/rhoc_si;
+  omegaGas = (massGas)*m_unit/volume/rhoc_si;
+  omegaStar = (massStar)*m_unit/volume/rhoc_si;
+
+  printf("OmegaTot: %g\n",omegaTot);
+  printf("OmegaGas: %g\n",omegaGas);
+  printf("OmegaDm: %g\n",omegaDm);
+  printf("OmegaBaryon: %g\n",omegaBaryon);
+  printf("OmegaStar: %g\n",omegaStar);
+
+}
+
 int main(int argc, char** argv) {
 
   char *snapfile;
@@ -25,10 +84,10 @@ int main(int argc, char** argv) {
   /* output information about the simulation */
   printf("\n Information about the snapshot: \n");
   printf("Boxsize: %g\n", header.BoxSize);
-  printf("Number of gas particles: %i\n", header.npart[0]);
-  printf("Number of high-res dm particles: %i\n", header.npart[1]);
-  printf("Number of low-res dm particles: %i\n", header.npart[5]);
-  printf("Number of star particles: %i\n", header.npart[4]);
+  printf("Number of gas particles: %i\n", header.npartTotal[0]);
+  printf("Number of high-res dm particles: %i\n", header.npartTotal[1]);
+  printf("Number of low-res dm particles: %i\n", header.npartTotal[5]);
+  printf("Number of star particles: %i\n", header.npartTotal[4]);
 
   /* find the coordinate values */
   int i,j;
@@ -44,7 +103,7 @@ int main(int argc, char** argv) {
   /* printf(" xMin: %g xMax: %f \n", xMin, xMax); */
   /* printf(" yMin: %g yMax: %f \n", yMin, yMax); */
   /* printf(" zMin: %g zMax: %f \n", zMin, zMax); */
-  for(i=1; i< header.npart[0]+header.npart[1]; i++) {
+  for(i=1; i< header.npartTotal[0]+header.npartTotal[1]; i++) {
     if(P[i].Pos[0] < xMin)
       xMin = P[i].Pos[0];
     if(P[i].Pos[0] > xMax)
@@ -62,6 +121,8 @@ int main(int argc, char** argv) {
   printf(" xMin: %g xMax: %f \n", xMin, xMax);
   printf(" yMin: %g yMax: %f \n", yMin, yMax);
   printf(" zMin: %g zMax: %f \n", zMin, zMax);
+  printf(" Check the matter content\n");
+  check_omega(P,&header);
 
   return 0;
 }
