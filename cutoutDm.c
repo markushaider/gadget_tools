@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
   /* not sure wheather this makes sense */
   float extent=20000;
   float center = header.BoxSize/2;
-  for (i=0;i<nTot;i++) {
+  for (i=0;i<header.npart[1];i++) {
       P_out[i].Pos[0]-= center-extent/2;
       P_out[i].Pos[1]-= center-extent/2;
       P_out[i].Pos[2]-= center-extent/2;
