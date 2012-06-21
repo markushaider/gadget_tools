@@ -7,7 +7,7 @@ SOURCES =  snapshot_io.c data_ops.c
 OBJECTS = $(SOURCES:.c=.o)
 LIBS = -lm
 
-EXECUTABLES = cutout info reduce getBBox
+EXECUTABLES = cutout info reduce getBBox cutoutDm
 
 all: $(EXECUTABLES)
 
