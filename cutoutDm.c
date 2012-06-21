@@ -13,10 +13,13 @@ int main(int argc, char** argv) {
   infile=argv[1];
   char *outfile;
   outfile=argv[2];
-  if(argc!=3) {
-    printf("Usage: ./cutoutDm <infile> <outfile>\n");
+  float gasPMass=atof(argv[3]);
+  if(argc!=4) {
+    printf("Usage: ./cutoutDm <infile> <outfile> <gas particle mass>\n");
     return 0;
   }
+  printf("Got %g for gas particle mass\n",gasPMass);
+
 
   /* load snapshot file */
   io_header header;
@@ -46,7 +49,8 @@ int main(int argc, char** argv) {
   }
 
   /* correct the masses */
-  header.mass[1]+=header.mass[0]; /* add gas mass to dm mass in order to comply with rockstar */
+  printf("Changing DM mass from %g to %g (+%g)\n",header.mass[1],header.mass[1]+gasPMass,gasPMass);
+  header.mass[1]+=gasPMass; /* add gas mass to dm mass in order to comply with rockstar */
   header.mass[0]=0;
   header.mass[4]=0;
   header.mass[5]=0;
