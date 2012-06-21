@@ -94,8 +94,8 @@ int main(int argc, char** argv) {
   printf("Number of low-res dm particles: %i\n", header.npartTotal[5]);
   printf("Number of star particles: %i\n", header.npartTotal[4]);
 
+  printf("Mass of P[0]: %g\n",P[0].Mass);
   printf("Mass of particle type 0: %g\n",header.mass[0]);
-  printf("Mass of particle type 0 (mass array): %g\n",P[0].Mass);
   printf("Mass of particle type 1: %g\n",header.mass[1]);
   printf("Mass of particle type 2: %g\n",header.mass[2]);
   printf("Mass of particle type 3: %g\n",header.mass[3]);
