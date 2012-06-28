@@ -112,7 +112,7 @@ int main(int argc, char** argv) {
   yMax = P[0].Pos[1];
   zMin = P[0].Pos[2];
   zMax = P[0].Pos[2];
-//   printf(" Values:\n");
+  printf(" Values:\n");
   /* printf(" xMin: %g xMax: %f \n", xMin, xMax); */
   /* printf(" yMin: %g yMax: %f \n", yMin, yMax); */
   /* printf(" zMin: %g zMax: %f \n", zMin, zMax); */

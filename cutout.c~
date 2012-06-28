@@ -50,15 +50,15 @@ int main(int argc, char** argv) {
 
   
   /* check if the cutout region does not extend over boundaries */ 
-  if(header.BoxSize-extent>clumpx || extent>clumpx) {
+  if(header.BoxSize/2.+extent/2.<clumpx || header.BoxSize/2.-extent/2.>clumpx) {
     printf("Out of bound in x-dimension - chose a more centered clump \n" );
     return 0;  
   }
-  if(header.BoxSize-extent>clumpy || extent>clumpy) {
+  if(header.BoxSize/2.+extent/2.<clumpy || header.BoxSize/2.-extent/2.>clumpy) {
     printf("Out of bound in y-dimension - chose a more centered clump \n" );
     return 0;  
   }
-  if(header.BoxSize-extent>clumpz || extent>clumpz) {
+  if(header.BoxSize/2.+extent/2.<clumpy || header.BoxSize/2.-extent/2.>clumpz) {
     printf("Out of bound in z-dimension - chose a more centered clump \n" );
     return 0;  
   } 

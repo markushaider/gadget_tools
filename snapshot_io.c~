@@ -233,7 +233,7 @@ int load_snapshot(const char *const filename, io_header *const header, particle_
 	  
 	  //11 read metallicity (particles 0 & 4)
 	 SKIP;
-// 	 printf("read metals: %d\n", dummy);
+	 printf("read metals: %d\n", dummy);
 	 pc = particle_count;
 	 for(n = 0; n < header->npart[0]; n++)
 	       fread(&((*P)[pc++].metals), sizeof(float), 1, fd);
