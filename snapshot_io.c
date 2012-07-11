@@ -18,7 +18,18 @@ static union
 #define SKIP_ID fread(&dummy_id, sizeof(char), 16, fd)
 #define BSZ	fwrite(&blockSize, sizeof(blockSize), 1, fd)
 
+
+/////////////////////////////////////////////////////////////////////////////////////////////////// DST neutral
+static char Tab_IO_Labels[IO_NBLOCKS][4];	//block name
+static char *Tab_Ptr[IO_NBLOCKS];		//pointer to particle var
+static char Tab_TypeS[IO_NBLOCKS]; 	//sizeof variable
+static int Tab_Size[IO_NBLOCKS];		//number of values in var array
+static char Tab_Type[IO_NBLOCKS];		//block applied to which particle type
+
+
 //////////////////////////////////////////////// LOCAL PROTOTYPES
+
+static void init_tabs(particle_data *P, io_header *header);
 
 
 ////////////////////////////////////////////////// IMPLEMENTATION
@@ -78,7 +89,23 @@ int load_snapshot(const char *const filename, io_header *const header, particle_
 		    if(header->mass[k]==0)
 			 ntot_withmasses += header->npartTotal[k];
 	       }
+	       if(NumPart == 0) //example files -> only npart filled
+		  {
+			for(k = 0; k < 6; k++)
+			{
+				header->npartTotal[k] = header->npart[k];
+				NumPart += header->npart[k];
+				if(header->mass[k]==0)
+					ntot_withmasses += header->npart[k];
+			}
+		  }
 	       printf("np: %d\n", NumPart);
+		  if(NumPart == 0)
+		  {
+		    fprintf(stderr,"ERROR: NumPart=0\n");
+		    fclose(fd);
+		    return -1; 
+		  }
 	       
 	       //error with more files!!!!!!!!!!!!!!!!!!!????????????????????
 	       if(!(*P = (particle_data *)calloc(NumPart, sizeof(particle_data))))
@@ -730,6 +757,235 @@ int write_snapshot(const char *const filename, const io_header *const header, pa
      return 0;
 }
 
+void write_blockname(FILE *f, enum iofields field, int block_size)
+{
+	int size = 8;
+	
+	fwrite(&size, sizeof(int), 1, f);
+	fwrite(Tab_IO_Labels[field], sizeof(char), 4, f);
+	block_size+=8;
+	fwrite(&block_size, sizeof(int), 1, f);
+	fwrite(&size, sizeof(int), 1, f);
+}
+
+int write_snapshot2(const char *const filename, const io_header *const header, particle_data *const P)
+{
+     int blockSize;
+     int size;
+     int i, j;
+     int pc;
+     FILE *fd = fopen(filename, "w");
+     
+     if(!fd)
+     {
+	  fprintf(stderr, "can't open file for writing: %s\n", filename);
+	  return -1;
+     }
+     
+     //determine size
+     size = 0;
+     for(i = 0; i < 6; i++)
+	  size += header->npartTotal[i];
+	
+	//init tabs
+	init_tabs(P, header);
+     
+     //write header
+     blockSize = HEADER_SIZE;
+	printf("write header: %d\n", blockSize);
+	
+	char s_header[4] = "HEAD";
+	int sz = 8;
+	fwrite(&sz, sizeof(int), 1, fd);
+	fwrite(s_header, sizeof(char), 4, fd);
+	blockSize+=8;
+	fwrite(&blockSize, sizeof(int), 1, fd);
+	fwrite(&sz, sizeof(int), 1, fd);
+	blockSize-=8;
+	
+     BSZ;
+     memset(rd_header.bytes, 0, HEADER_SIZE);
+     rd_header.header = *header;
+     fwrite(&rd_header, sizeof(rd_header), 1, fd);
+     BSZ;
+     
+     
+     //write particle data
+     
+     //first sort particles by their type
+     reordering(P, size, SORT_TYPE);
+     
+     //write positions 0
+     blockSize = size * sizeof(float) * 3;
+	printf("write positions: %d\n", blockSize);
+	write_blockname(fd, IO_POS, blockSize);
+     BSZ;
+     pc = 0;
+     for(i = 0; i < 6; i++)
+     {  
+	  for(j = 0; j < header->npartTotal[i]; j++)
+	       fwrite(P[pc++].Pos, sizeof(float), 3, fd);
+     }
+     BSZ;
+     
+     //write velocities 1
+     blockSize = size * sizeof(float) * 3;
+	printf("write velocities: %d\n", blockSize);
+	write_blockname(fd, IO_VEL, blockSize);
+     BSZ;
+     pc = 0;
+     for(i = 0; i < 6; i++)
+     {  
+	  for(j = 0; j < header->npartTotal[i]; j++)
+	       fwrite(P[pc++].Vel, sizeof(float), 3, fd);
+     }
+     BSZ;
+     
+     //write particle-ids 2
+     blockSize = size * sizeof(int) * 1;
+	printf("write ids: %d\n", blockSize);
+	write_blockname(fd, IO_ID, blockSize);
+     BSZ;
+     pc = 0;
+     for(i = 0; i < 6; i++)
+     {  
+	  for(j = 0; j < header->npartTotal[i]; j++)
+	       fwrite(&(P[pc++].Id), sizeof(int), 1, fd);
+     }
+     BSZ;
+     
+     //write masses 3
+     for(i = 0; i < 6; i++)
+	  if(header->mass[i] == 0 && header->npartTotal[i]) //only for present particles
+	       break;
+     if(i < 6)	//at least one type of particles contains mass info
+     {
+	  //printf("write masses!\n");
+	  blockSize = 0;
+	  for(i = 0; i < 6; i++)
+	       blockSize += (header->mass[i] ? 0 : (header->npartTotal[i] * sizeof(float) * 1));
+	  printf("write mass: %d\n", blockSize);
+	  write_blockname(fd, IO_MASS, blockSize);
+	  BSZ;
+	  pc = 0;
+	  for(i = 0; i < 6; i++)
+	  {
+	       if(header->mass[i] == 0)
+	       {
+		    for(j = 0; j < header->npartTotal[i]; j++)	//mass
+			 fwrite(&(P[pc++].Mass), sizeof(float), 1, fd);
+	       }
+	       else
+		    pc += header->npartTotal[i];
+	  }
+	  BSZ;
+     }
+
+     //only gas 
+     if(header->npartTotal[0] > 0)
+     {
+	  //write internal energy U 4
+	  blockSize = header->npartTotal[0] * sizeof(float) * 1;
+	  printf("write U: %d\n", blockSize);
+	  write_blockname(fd, IO_U, blockSize);
+	  BSZ;
+	  pc = 0;
+	  for(j = 0; j < header->npartTotal[0]; j++)
+	       fwrite(&(P[pc++].U), sizeof(float), 1, fd);	//4 internal energy
+	  BSZ;
+	  
+	  //write density 5
+	  printf("write density: %d\n", blockSize);
+	  write_blockname(fd, IO_RHO, blockSize);
+	  BSZ;
+	  pc = 0;
+	  for(j = 0; j < header->npartTotal[0]; j++)
+	       fwrite(&(P[pc++].Rho), sizeof(float), 1, fd);	//5 density
+	  BSZ;
+	  
+	  //cooling
+	  if(header->flag_cooling)
+	  {
+		  printf("write ne: %d\n", blockSize);
+		  write_blockname(fd, IO_NE, blockSize);
+	       BSZ;
+	       pc = 0;
+	       for(j = 0; j < header->npartTotal[0]; j++)	//6 electron abundance
+		    fwrite(&(P[pc++].Ne), sizeof(float), 1, fd);
+	       BSZ;
+	       
+		  printf("write nH0: %d\n", blockSize);
+		  write_blockname(fd, IO_NH, blockSize);
+	       BSZ;
+	       pc = 0;
+	       for(j = 0; j < header->npartTotal[0]; j++)	//7 neutral H abundance
+		    fwrite(&(P[pc++].Nnh), sizeof(float), 1, fd);
+	       BSZ;
+	  }
+	  
+	  //block 8-9 not used anymore
+	  
+	  printf("write hsml: %d\n", blockSize);
+	  write_blockname(fd, IO_HSML, blockSize);
+	  BSZ;
+	  pc = 0;
+	  for(j = 0; j < header->npartTotal[0]; j++)
+	       fwrite(&(P[pc++].Hsml), sizeof(float), 1, fd);	//10 smoothing length
+	  BSZ;
+	  
+	  if(header->flag_sfr)
+	  {
+		  printf("write sfr: %d\n", blockSize);
+		  write_blockname(fd, IO_SFR, blockSize);
+	       BSZ;
+	       pc = 0;
+	       for(j = 0; j < header->npartTotal[0]; j++)
+		    fwrite(&(P[pc++].sfr), sizeof(float), 1, fd);	//11 current star formation rate
+	       BSZ;
+	  }
+	}
+	  
+	  if(header->flagAge)
+	  {
+		  blockSize = header->npartTotal[4] * sizeof(float) * 1;
+		  printf("write age: %d\n", blockSize);
+		  write_blockname(fd, IO_STELLARAGE, blockSize);
+	       BSZ;
+	       pc = header->npartTotal[0]+header->npartTotal[1]+header->npartTotal[2]+header->npartTotal[3];
+	       for(j = 0; j < header->npartTotal[4]; j++)
+		    fwrite(&(P[pc++].age), sizeof(float), 1, fd);	//12 mean stellar age
+	       BSZ;
+	  }
+	 
+	 if(header->npartTotal[0] || header->npartTotal[4])
+	 {
+		if(header->flagMetals)
+		{
+			blockSize = (header->npartTotal[0]+header->npartTotal[4]) * sizeof(float) * 1;
+			printf("write metals: %d\n", blockSize);
+			write_blockname(fd, IO_Z, blockSize);
+			BSZ;
+			//write metallicity of gas particles
+			pc = header->npartTotal[0];
+			for(j = 0; j < header->npartTotal[0]; j++)
+				fwrite(&(P[pc++].metals), sizeof(float), 1, fd);	//13 metallicity
+			//write metallicity of new stellar particles
+			pc = header->npartTotal[0]+header->npartTotal[1]+header->npartTotal[2]+header->npartTotal[3];
+			for(j = 0; j < header->npartTotal[4]; j++)
+				fwrite(&(P[pc++].metals), sizeof(float), 1, fd);
+			BSZ;
+		}
+	}
+	
+	//14 magnetic fields
+     //....
+     
+     
+     fclose(fd);
+     
+     return 0;
+}
+
 int writeIfritParticleFile(const char *const filename, const particle_data *const P, const int size, const float box[6]) //box: boundary box xl,yl,zl, xh,yh,zh
 {
      FILE *fd;
@@ -936,12 +1192,6 @@ int writeStellarAge(const char *const filename, particle_data *sp, int size)
 }
 
 
-/////////////////////////////////////////////////////////////////////////////////////////////////// DST neutral
-static char Tab_IO_Labels[IO_NBLOCKS][4];	//block name
-static char *Tab_Ptr[IO_NBLOCKS];		//pointer to particle var
-static char Tab_TypeS[IO_NBLOCKS]; 	//sizeof variable
-static int Tab_Size[IO_NBLOCKS];		//number of values in var array
-static char Tab_Type[IO_NBLOCKS];		//block applied to which particle type
 
 static void init_tabs(particle_data *P, io_header *header)
 {

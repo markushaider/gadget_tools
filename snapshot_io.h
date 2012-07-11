@@ -135,6 +135,9 @@ int write_snapshot(const char *const filename, const io_header *const header, pa
 *	\param useMass 	if 1 use definitely the mass of each particle 
 *	\return 	number of particles (size)
 */
+
+int write_snapshot2(const char *const filename, const io_header *const header, particle_data *const P);
+
 int generateHeader(io_header *const header, const particle_data *const P, const int size, const int useMass);
 /**
 *	write an Ifrit particle file
